@@ -1,0 +1,255 @@
+#!/bin/bash
+#
+#
+# This script play's youtube videos from the terminal (via mpv or mkchromecast).
+# No need to open a browser and go to the youtube site.
+# This script uses external tools to obtain urls and play youtube videos.
+# MPV to play, curl to fetch the source page and YouTube-DL to get the url for the highest quality Video.
+# MPV has a builtin hook to use YouTube-DL (required) to obtain the url and play the highest quality Video.
+# In addition, this script uses the bash builtin mapfile that is only available in bash > 4.x
+# This script offers no dependency checks for the optional tools. Make sure you have the required tools installed.
+# You can use this script as a template for most any youtube page simply by changing the variables listed below.
+# On ocassion some youtube channel url's have variations like channel instead of user. Double check, most of the time its user.
+#
+# Requirements:
+#
+# MPV
+# Youtube-DL   # Youtube-DL install instructions https://youtube-dl.org/
+# Curl
+# Bash > 4.x (for builtin mapfile)
+#
+# Optional: Screen casting the videos 
+#
+# castnow (not currently being developed but works)
+# or
+# mkChromecast (default as its in current development) https://mkchromecast.com/#installation
+#
+# For casting to a google chromecast device. Video will be sent to the first device detected. If running a firewall on your local computer Firewall port 5000 must be accessible.
+# for a ubuntu based distro using ufw you can use, ### sudo ufw allow from xxx.xxx.xxx.xxx to any port 5000 proto tcp ###. xxx.xxx.xxx.xxx represents the IP of your chromecast device.
+# If you have more than 1 chromecast device and the desired one is not the first one listed you can use the -s flag to have an interactive selection of the device you want.
+# as in mkchromecast -s -y "${mp4}" --video
+# mkChromecast  visit https://mkchromecast.com/#installation for install instructions
+# You can also stream local files using mkchromecast by manually running ### mkchromecast -s -i 'SomeVideofile.mp4' --control --video ###
+# However, IMO castnow works better for local files as you have fastforward rewind and pause resume control for local files. https://github.com/xat/castnow
+
+
+# Videos are NOT downloaded before playing. They are streamed realtime to the MPV buffer / cache as needed.
+
+
+##############################################################################################################################
+##############################################################################################################################
+
+
+# YouTube Channel Variables
+
+Logfile="CBC-" 		# Call it something short and simple. Put a dash at the end to help identify if needed.
+Title="Canada CBC News" #Heading at the top of the terminal Menu. Call it whatever you want
+Channel="cbcnews" 	# as in https://www.youtube.com/user/----->  bbcnews  <-------/videos
+ChannelURL=https://www.youtube.com/user/"${Channel}"/videos # Make sure this format is corrcet for your url. On ocassion some channels have variations like channel instead of user
+
+
+##############################################################################################################################
+##############################################################################################################################
+
+
+# MPV Options for local display only
+
+# Geometry is the window position in pixels xy. Autofit is the size of the window. Both can be removed if desired
+mpvOptions="--ontop --geometry=1300:90 --autofit=35% --no-terminal --really-quiet"
+
+
+##############################################################################################################################
+##############################################################################################################################
+
+
+# Setup Text Colors
+black=$(tput setaf 16)
+white=$(tput setaf 15)
+gray=$(tput setaf 236)
+blue=$(tput setaf 21)
+green=$(tput setaf 28)
+red=$(tput setaf 1)
+cyan=$(tput setaf 36)
+purple=$(tput setaf 128)
+brown=$(tput setaf 130)
+yellow=$(tput setaf 226)
+orange=$(tput setaf 202)
+pink=$(tput setaf 207)
+lgray=$(tput setaf 246)
+lblue=$(tput setaf 39)
+lgreen=$(tput setaf 118)
+lred=$(tput setaf 9)
+lcyan=$(tput setaf 14)
+lpurple=$(tput setaf 99)
+blgray=$(tput setab 246) # Background Light Gray
+BoGreen=$(tput bold; tput setaf 28) # Bold Green
+BoRed=$(tput bold; tput setaf 1) # Bold Red
+ReverseGR=$(tput setaf 28; tput rev) 	# Reverse Green
+ReverseRed=$(tput setaf 1; tput rev) 	# Reverse Red
+invis=$(tput civis)			# Invisible Cursor
+norm=$(tput cnorm)			# Normal Cursor
+standout=$(tput smso)
+blink=$(tput blink)
+reverse=$(tput rev)
+bold=$(tput bold) 
+reset=$(tput sgr0)      #  Reset text attributes to normal
+
+
+##############################################################################################################################
+##############################################################################################################################
+
+#Requirements Check
+
+REQUIRES="youtube-dl curl mpv"
+
+# Check required tools are installed
+for tool in ${REQUIRES}; do
+    if ! [ -x "$(command -v ${tool})" ]; then
+        printf "%b\n" ${BoRed}  "Error: ${tool} is not installed or not in your path. ${tool} is required.${reset}\n" >&2
+        exit 1
+    fi
+done
+
+
+
+Main() {
+tput clear
+
+# Remove logfiles Pre & Post script run
+rm_log() {
+for i in "${Logfile}"*.log; do
+[ -f "${i}" ] && rm "${i}";
+done
+}
+
+# Make sure we dont have any leftover stale log files
+rm_log
+
+printf "%b\n"
+printf "%b\n" "Getting source file......Please wait\n\n"
+
+# Download the YouTube Channel videos page
+youtube-dl --playlist-items 1-99 -j --flat-playlist "${ChannelURL}" > "${Logfile}"source.log
+
+# Get the source file for video dates.
+# Until youtube-dl supports "upload / file date" with --flat-playlist this is helpful for getting the video dates (currently only max of 30)
+curl -s -L "${ChannelURL}" > "${Logfile}"source2.log
+
+printf "%b\n" "Getting Video url's, Dates & Title's for videos......Please wait\n\n"
+
+
+for i in $(awk -F'["]' '{print $4}' "${Logfile}"source.log );
+do printf "%b\n" "https://www.youtube.com/watch?v=""${i}" >> "${Logfile}"urls.log;
+done
+
+
+# Get the Video title's.
+grep -Pio '(?<="title": ").*?(?="})' "${Logfile}"source.log > "${Logfile}"titles.log
+
+# Get the Video dates.
+# Until youtube-dl supports "upload / file date" with --flat-playlist this is helpful for getting the video dates (currently only max of 30)
+grep -Pio '(?<=views</li><li>).*?(?=</li></ul>)' "${Logfile}"source2.log  >> "${Logfile}"dates.log
+
+
+# Get video duration
+# Until youtube-dl supports all "--get-options" with --flat-playlist this is not usable.
+grep -Pio '(?<=> - Duration: ).*?(?=.</span></h3>)' "${Logfile}"source2.log >>  "${Logfile}"time.log
+
+# Add the word long to the time string
+sed -i 's/$/ Long/' "${Logfile}"time.log
+sed -i 's/$/:/' "${Logfile}"dates.log
+
+# Create the arrays.
+mapfile -O 1 -t < "${Logfile}"titles.log titles
+mapfile -O 1 -t < "${Logfile}"dates.log dates
+mapfile -O 1 -t < "${Logfile}"urls.log mp4url
+mapfile -O 1 -t < "${Logfile}"time.log duration
+
+# Until youtube-dl supports all "--get-options" with --flat-playlist this is not usable.
+#mapfile -O 1 -t < "${Logfile}"time.log duration
+
+# Remove temp log files now that the arrays are populated
+rm_log
+tput clear
+Display
+}
+
+Display() {
+# Begin display menu.
+printf "%b\n" "${red}" "${Title} (Video)\n"
+printf "%b\n"
+
+i=1
+until [ $i -gt ${#titles[@]} ]
+do
+	printf "%b" "${orange} $i.   ${titles[i]} ${cyan} ${dates[i]} ${purple} ${duration[i]}${reset}\n\n"
+	i=$(( i+1 ))
+done
+
+
+#for ((i=1;i<=${#titles[@]};++i)); do
+#printf "%b" "${orange} $i.   ${titles[i]} ${cyan} ${dates[i]}\n\n"
+#done
+
+printf "%b\n" "${green}""  Single Digit Entries Require Enter Key to Be Pressed. (Double Tap ESC to Exit or CTRL-C)"
+
+# Get the users selected title / date / url from the menu.
+read -r -n 2 choice
+tput el1; tput cuu 2; tput ed
+
+# Assign the Video url variable from the users choice.
+if [[ ${choice} == $'\e'$'\e' ]]; then
+tput cub 100;tput ed
+exit
+elif [ "${choice}" -ge 1 ] && [ "${choice}" -le ${#titles[@]} ]; then
+mp4="${mp4url[$choice]}"
+else
+#tput clear
+Display
+fi
+
+printf "%b" "${reset}"  "Playing   ${choice}  ${pink} ${titles[$choice]}\n"
+
+printf "%b" "${red}" " MPV controls"
+printf "%b\n" "${blue}" " https://mpv.io/manual/master/"
+printf "%b" "${reset}"
+printf "%b" "${norm}"
+Output
+}
+
+# Choose where to display output. Either Chromecast or computer monitor.
+Output() {
+
+printf "%b" "${yellow}"
+read -p "1. For local Computer Monitor.    2. For Google Cast device  " -r -n 1 choice2
+printf "%b" "${reset}"
+
+# MPV Player local display
+if [[ ${choice2} == $'\e' ]]; then
+tput cub 100;tput ed
+Display
+elif [[ ${choice2} == 1 ]]; then
+tput dl 1;tput ed
+printf "%b\n" "Playing on Local Display URL  "${mp4}""
+mpv ${mpvOptions} --title="${titles[$choice]}  ${dates[$choice]}" --force-media-title="${titles[$choice]}" "${mp4}"
+wait
+tput clear
+Display
+# Cast to Google Chromecast
+elif [[ ${choice2} == 2 ]]; then
+tput cuu 2;tput cub 100;tput ed
+printf "%b\n\n\n" "Screen Casting  "${mp4}""
+
+# Stream to mkchromecast (available but optional comment out to use castnow instead of mkchromecast)
+mkchromecast -p 5000 -y "${mp4}" --video --control
+
+# Stream to castnow (available but optional    Uncomment this option to use instead of mkchromecast)
+#youtube-dl -o - "${mp4}" | castnow --stdin-port 5000 --quiet -
+
+tput clear
+Display
+else
+Output
+fi
+}
+Main
