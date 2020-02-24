@@ -34,7 +34,7 @@ location=""${HOME}"/YouTubeVids/"
 curl (for fetching the channel html source)
 
 
-mpv (for playing the videos)
+mpv (for playing the videos) https://mpv.io/installation/
 
 
 youtube-dl (for grabbing the url and titles) Youtube-DL install instructions https://youtube-dl.org/
