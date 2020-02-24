@@ -2,10 +2,6 @@
 ![](ScreenShot.png)
 ![](ScreenShot2.png)
 
-Make all files (ytMenu & .menu files) executable before using this script.
-
-Then run the ytMenu file and select your channel. Then select your output type (local screen or chromecast). Wait a few seconds and your video will play.
-
 Watch Youtube Videos without going to the youtube site. (Either on your local display or chromecast)
 
 
@@ -29,8 +25,13 @@ In addition the youtube channel files themselves are universal, modify any file 
 
 Change this variable in the ytMenu script to where the .menu files are kept.
 
+# Installation
+Make all files (ytMenu & .menu files) executable before using this script.
 
+Edit the ytMenu file and change the location variable to match the location where you stored the files.
 location=""${HOME}"/YouTubeVids/"
+
+Then run the ytMenu file and select your channel. Then select your output type (local screen or chromecast). Wait a few seconds and your video will play.
 
 # Requirements:
 
