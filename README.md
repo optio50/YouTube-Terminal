@@ -1,3 +1,5 @@
+## A universal script to view any youtube channel video without going to youtube.com in your browser
+## also included is a universal auto detecting menu to display and run the scripts (any script).
 ![](ScreenShot.png)
 ![](ScreenShot2.png)
 
