@@ -22,16 +22,16 @@ it will display and run any script it sees with the .menu extension which makes 
 
 In addition the youtube channel files themselves are universal, modify any file to any channel on youtube you like via the variable options in the channel file.
 
-### Logfile="NHL-"
+##### Logfile="NHL-"
 
 
-### Title="NHL News & Game Highlights"
+##### Title="NHL News & Game Highlights"
 
 
-### Channel="NHLVideo"
+##### Channel="NHLVideo"
 
 
-### ChannelURL=https://www.youtube.com/user/"${Channel}"/videos
+##### ChannelURL=https://www.youtube.com/user/"${Channel}"/videos
 
 
 
