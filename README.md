@@ -1,7 +1,7 @@
 ![](ScreenShot.png)
 ![](ScreenShot2.png)
 
-Watch Youtube Videos without going to the youtube site.
+Watch Youtube Videos without going to the youtube site. (Either on your local display or chromecast)
 
 
 This script is faster than going to youtube and selecting your video of interest.
