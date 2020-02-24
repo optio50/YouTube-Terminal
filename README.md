@@ -29,7 +29,7 @@ Change this variable in the ytMenu script to where the .menu files are kept.
 
 location=""${HOME}"/YouTubeVids/"
 
-Requirements:
+#Requirements:
 
 curl (for fetching the channel html source)
 
