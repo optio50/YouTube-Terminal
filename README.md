@@ -1,6 +1,8 @@
 ![](ScreenShot.png)
 ![](ScreenShot2.png)
 
+Make all files (ytMenu & .menu files) executable before using this script.
+
 Watch Youtube Videos without going to the youtube site. (Either on your local display or chromecast)
 
 
