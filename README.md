@@ -4,6 +4,8 @@
 
 Make all files (ytMenu & .menu files) executable before using this script.
 
+Then run the ytMenu file and select your channel. Then select your output type (local screen or chromecast). Wait a few seconds and your video will play.
+
 Watch Youtube Videos without going to the youtube site. (Either on your local display or chromecast)
 
 
