@@ -47,10 +47,10 @@ Then run the ytMenu file and select your channel. Then select your output type (
 
 # Requirements:
 
-curl (for fetching the channel html source)
+curl (for fetching the channel html source) available from your distro repository.
 
 
-mpv (for playing the videos) https://mpv.io/installation/
+mpv (for playing the videos) most likely available from your distro repository or https://mpv.io/installation/
 
 
 youtube-dl (for grabbing the url and titles) Youtube-DL install instructions https://youtube-dl.org/
@@ -60,6 +60,6 @@ youtube-dl (for grabbing the url and titles) Youtube-DL install instructions htt
 Optional:
 
 
-MKchromecast (for casting the video to your chromecast device) https://mkchromecast.com/#installation
+MKchromecast (for casting the video to your chromecast device) likely available from your distro repository or https://mkchromecast.com/#installation
 
 I have included a bunch of sample files to get you started.
