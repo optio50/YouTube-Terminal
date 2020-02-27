@@ -13,14 +13,19 @@ These files will fetch the latest 99 videos (or whatever # you want) and display
 
 Make your selection and the video will open on your local screen or a chromecast device. (MPV used for local & MKchromecast used for casting).
 
-##### Title="NHL News & Game Highlights"
+#####{Menu Entry}
 
 
-##### Channel="NHLVideo"
+######NHL
 
 
-##### ChannelURL=https://www.youtube.com/user/"${Channel}"/videos
+######Title="The official YouTube page of the NHL"
 
+
+######Channel="NHLVideo"
+
+
+#####ChannelURL=https://www.youtube.com/user/"${Channel}"/videos
 
 
 
