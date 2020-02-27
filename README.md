@@ -13,18 +13,6 @@ These files will fetch the latest 99 videos (or whatever # you want) and display
 
 Make your selection and the video will open on your local screen or a chromecast device. (MPV used for local & MKchromecast used for casting).
 
-
-A menu is also included to simplify the process. The menu script will automatically and instantly see all files with the ".menu" extension and display the choices on your screen.
-
-The menu is not limited to running the youtube script files,
-it will display and run any script it sees with the .menu extension which makes it a universal menu to be used for whatever you want.
-
-
-In addition the youtube channel files themselves are universal, modify any file to any channel on youtube you like via the variable options in the channel file.
-
-##### Logfile="NHL-"
-
-
 ##### Title="NHL News & Game Highlights"
 
 
@@ -38,12 +26,12 @@ In addition the youtube channel files themselves are universal, modify any file 
 
 
 # Installation
-Make all files (ytMenu & .menu files) executable before using this script.
+Make ytVideo file executable before using this script.
 
-Edit the ytMenu file and change the location variable to match the location where you stored the files.
-location=""${HOME}"/YouTubeVids/"
+Edit the ytVideo file and change the location variable to match the location where you stored the config file.
+config=""$HOME"/Scripts"
 
-Then run the ytMenu file and select your channel. Then select your output type (local screen or chromecast). Wait a few seconds and your video will play.
+Then run the ytVideo file and select your channel. Then select your output type (local screen or chromecast). Wait a few seconds and your video will play.
 
 # Requirements:
 
@@ -62,4 +50,4 @@ Optional:
 
 MKchromecast (for casting the video to your chromecast device) likely available from your distro repository or https://mkchromecast.com/#installation
 
-I have included a bunch of sample files to get you started.
+I have included a bunch of sample channels to get you started.
