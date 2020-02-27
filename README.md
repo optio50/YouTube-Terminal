@@ -1,5 +1,5 @@
 ## A universal script to view any youtube channel video without going to youtube.com in your browser.
-![](ScreenShot1.png)
+![](ScreenShot.png)
 ![](ScreenShot2.png)
 
 Watch Youtube Videos without going to the youtube site. (Either on your local display or chromecast)
