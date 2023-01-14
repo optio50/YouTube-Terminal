@@ -4,12 +4,28 @@
 config=""$HOME"/Scripts"
 Logfile="YouTubeVids-"
 
+# Geometry is the window position in pixels xy. Autofit is the size of the window. Both can be removed if desired
+mpvOptions="--force-window=immediate --ontop --geometry=1232:191 --autofit=35% --no-terminal --really-quiet"
+
+
+# set the screen to ensure 2 columns for initial menu dislay
+# delete if undesirable
+if command -v resize >/dev/null 2>&1 ; then
+    resize -s 50 125
+	clear
+	tput cup 0 0
+else
+    printf '\e[8;50;125t'
+    clear
+    tput rc
+fi
+
 #
 # This script play's youtube videos from the terminal (via mpv or mkchromecast).
 # No need to open a browser and go to the youtube site.
 # This script uses external tools to obtain urls and play youtube videos.
-# MPV to play, curl to fetch the source page and YouTube-DL to get the url for the highest quality Video.
-# MPV has a builtin hook to use YouTube-DL (required) to obtain the url and play the highest quality Video.
+# MPV to play, curl to fetch the source page and youtube-dl to get the url for the highest quality Video.
+# MPV has a builtin hook to use youtube-dl (required) to obtain the url and play the highest quality Video.
 # In addition, this script uses the bash builtin mapfile that is only available in bash > 4.x
 # This script offers no dependency checks for the optional tools. Make sure you have the required tools installed.
 # You can use this script as a template for most any youtube page simply by changing the variables listed below.
@@ -18,7 +34,7 @@ Logfile="YouTubeVids-"
 # Requirements:
 #
 # MPV
-# Youtube-DL   # Youtube-DL install instructions https://youtube-dl.org/
+# youtube-dl   # youtube-dl install instructions https://youtube-dl.org/
 # Curl
 # Bash > 4.x (for builtin mapfile)
 #
@@ -27,6 +43,9 @@ Logfile="YouTubeVids-"
 # castnow (not currently being developed but works)
 # or
 # mkChromecast (default as its in current development) https://mkchromecast.com/#installation
+#
+# Ubuntu pychromecast is buggy if you have issues try pip3 install "pychromecast==4.2"
+#
 #
 # For casting to a google chromecast device. Video will be sent to the first device detected. If running a firewall on your local computer Firewall port 5000 must be accessible.
 # for a ubuntu based distro using ufw you can use, "sudo ufw allow from xxx.xxx.xxx.xxx to any port 5000 proto tcp"  xxx.xxx.xxx.xxx represents the IP of your chromecast device.
@@ -47,7 +66,7 @@ tput clear
 
 # Requirements Check
 
-REQUIRES="youtube-dl curl mpv"
+REQUIRES="yt-dlp curl mpv"
 
 # Check that required tools are installed
 for tool in ${REQUIRES}; do
@@ -65,10 +84,10 @@ done
 #=========================================================================================================
 Read_Conf() {
 
-tput clear
+tput clear # Clear the screen
 
-# Make sure we have no stale arrays
-unset selections
+unset selections # Make sure we have no stale arrays
+# Create the Menu array
 mapfile -t -O 1 < <(awk '/{Menu Entry}/{getline; print}' "${config}"/ytVideo.conf) selections
 
 printf "%b\n" "${pink}"
@@ -82,14 +101,13 @@ cat << 'EOF'
 
 EOF
 
-
 printf "%b\n" "${orange}"
 
 number=1
-for name in "${selections[@]}"; do
-    printf "%b" "${number}.\t${selections[$number]}\n"
-    ((number++))
-done < "${config}"/ytVideo.conf
+until [ $number -gt ${#selections[@]} ]; do
+	printf "%b" " ${number}.\t ${selections[$number]}\n"
+	((number++))
+done  | column -c 125
 
 printf "%b\n" "${green}""  Single Digit Entries Require Enter Key to Be Pressed. (Double Tap ESC to Exit)"
 
@@ -106,6 +124,7 @@ eval ChannelURL=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | g
 tput cub 100;tput ed
 printf "%b\n" "${yellow}"
 read -r -p "How Many Episodes Should we get?  " Episodes
+printf "%b" "${reset}"
 else
 printf "%b\n" "Invalid Selection"
 sleep 2
@@ -121,10 +140,6 @@ Main
 
 
 # MPV Options. For local display only.
-
-# Geometry is the window position in pixels xy. Autofit is the size of the window. Both can be removed if desired
-mpvOptions="--ontop --geometry=1300:90 --autofit=35% --no-terminal --really-quiet"
-
 
 # Setup Text Colors
 
@@ -166,6 +181,13 @@ reset=$(tput sgr0)      #  Reset text attributes to normal
 Main() {
 tput clear
 
+while ! [[ "${Episodes}" -ge 1 && "${Episodes}" -le 999 ]]; do
+printf "%b\n" "${red}" "Episodes must be between 1 and 999"
+printf "%b\n"
+read -r -p "How Many Episodes Should we get?  " Episodes
+printf "%b" "${reset}"
+done
+
 # Remove logfiles Pre & Post script run
 rm_log() {
 for i in "${Logfile}"*.log; do
@@ -180,41 +202,40 @@ printf "%b\n"
 printf "%b\n" "Getting source file for ${selections[$choice]}......Please wait\n\n"
 printf "%b\n" ""${ChannelURL}" > "${Logfile}"source.log"
 # Download the YouTube Channel videos page
-youtube-dl --playlist-items 1-${Episodes} -j --flat-playlist "${ChannelURL}" > "${Logfile}"source.log
+yt-dlp --playlist-items 1-${Episodes} --flat-playlist --extractor-args "youtubetab:approximate_date" --print "%()j" "${ChannelURL}" > "${Logfile}"source.log
 
 # Get the source file for video dates.
 # Until youtube-dl supports "upload / file date" with --flat-playlist this is helpful for getting the video dates (currently only max of 30)
-curl -s -L "${ChannelURL}" > "${Logfile}"source2.log
+#curl -s -L "${ChannelURL}" > "${Logfile}"source2.log
 
 printf "%b\n" "Getting Video url's, Dates & Title's for videos......Please wait\n\n"
 
 
-for i in $(awk -F'["]' '{print $4}' "${Logfile}"source.log );
-do printf "%b\n" "https://www.youtube.com/watch?v=""${i}" >> "${Logfile}"urls.log;
-done
+jq -r .url "${Logfile}"source.log > "${Logfile}"urls.log
+#for i in $(awk -F'["]' '{print $4}' "${Logfile}"source.log );
+#do printf "%b\n" "https://www.youtube.com/watch?v=""${i}" >> "${Logfile}"urls.log;
+#done
 
 
 # Get the Video title's.
-grep -Pio '(?<="title": ").*?(?="})' "${Logfile}"source.log > "${Logfile}"titles.log
+jq -r .title "${Logfile}"source.log > "${Logfile}"titles.log
+#grep -Pio '(?<="title": ").*?(?="})' "${Logfile}"source.log > "${Logfile}"titles.log
+
+# Strip some basic HTML entities from titles and replace with correct character
+sed -i 's/&nbsp;/ /g; s/&amp;/\&/g; s/&lt;/\</g; s/&gt;/\>/g; s/&quot;/\"/g; s/#&#39;/\'"'"'/g; s/&#039;/\'"'"'/g; s/&ldquo;/\"/g; s/&rdquo;/\"/g; s/&rsquo;/\’/g; s/&mdash;/\-/g; s/&#160;/\-/g; s/2019;/\’/g; s/&#x2019;/\’/g; s/&#x27;/\’/g;' "${Logfile}"titles.log
+
 
 # Get the Video dates.
-# Until youtube-dl supports "upload / file date" with --flat-playlist this is helpful for getting the video dates (currently only max of 30)
-grep -Pio '(?<=views</li><li>).*?(?=</li></ul>)' "${Logfile}"source2.log  >> "${Logfile}"dates.log
+jq -r .upload_date "${Logfile}"source.log > "${Logfile}"dates.log
 
 
 # Get video duration
 # Until youtube-dl supports all "--get-options" with --flat-playlist this is not usable.
-grep -Pio '(?<=> - Duration: ).*?(?=.</span></h3>)' "${Logfile}"source2.log >>  "${Logfile}"time.log
+jq -r .duration_string "${Logfile}"source.log > "${Logfile}"time.log
 
 # Add the word long to the time string
 sed -i 's/$/ Long/' "${Logfile}"time.log
-sed -i 's/$/:/' "${Logfile}"dates.log
-
-# Make sure we have no stale arrays
-unset titles
-unset dates
-unset mp4url
-unset duration
+#sed -i 's/$/:/' "${Logfile}"dates.log
 
 # Create the arrays.
 mapfile -O 1 -t < "${Logfile}"titles.log titles
@@ -328,7 +349,7 @@ tput cuu 2;tput cub 100;tput ed
 printf "%b\n\n\n" "Screen Casting  "${mp4}""
 
 # Stream to mkchromecast (available but optional comment out to use castnow instead of mkchromecast)
-mkchromecast -p 5000 -y "${mp4}" --video --control
+mkchromecast -n SHIELD -p 5000 -y "${mp4}" --video --control
 
 # Stream to castnow (available but optional    Uncomment this option to use instead of mkchromecast)
 #youtube-dl -o - "${mp4}" | castnow --stdin-port 5000 --quiet -
