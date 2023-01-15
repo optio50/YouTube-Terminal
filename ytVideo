@@ -180,6 +180,11 @@ reset=$(tput sgr0)      #  Reset text attributes to normal
 
 Main() {
 tput clear
+unset titles
+unset dates
+unset mp4url
+unset duration
+
 
 while ! [[ "${Episodes}" -ge 1 && "${Episodes}" -le 999 ]]; do
 printf "%b\n" "${red}" "Episodes must be between 1 and 999"
@@ -202,8 +207,7 @@ printf "%b\n"
 printf "%b\n" "Getting source file for ${selections[$choice]}......Please wait\n\n"
 printf "%b\n" ""${ChannelURL}" > "${Logfile}"source.log"
 # Download the YouTube Channel videos page
-yt-dlp --playlist-items 1-${Episodes} --flat-playlist --extractor-args "youtubetab:approximate_date" --print "%()j" "${ChannelURL}" > "${Logfile}"source.log
-
+yt-dlp --playlist-items 1-"${Episodes}" --flat-playlist --extractor-args "youtubetab:approximate_date" --print "%()j" "${ChannelURL}" > "${Logfile}"source.log
 # Get the source file for video dates.
 # Until youtube-dl supports "upload / file date" with --flat-playlist this is helpful for getting the video dates (currently only max of 30)
 #curl -s -L "${ChannelURL}" > "${Logfile}"source2.log
