@@ -48,7 +48,7 @@ curl (for fetching the channel html source) available from your distro repositor
 mpv (for playing the videos) most likely available from your distro repository or https://mpv.io/installation/
 
 
-youtube-dl (for grabbing the url and titles) Youtube-DL install instructions https://youtube-dl.org/
+yt-dlp (for grabbing the url and titles) yt-dlp install instructions https://github.com/yt-dlp/yt-dlp
 
 
 
