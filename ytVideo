@@ -1,31 +1,63 @@
 #!/bin/bash
 #
 # Directory where the ytVideo.conf is stored.
-config=""$HOME"/Scripts"
+config=""$HOME"/YouTube-Terminal"
 Logfile="YouTubeVids-"
 
 # Geometry is the window position in pixels xy. Autofit is the size of the window. Both can be removed if desired
 mpvOptions="--force-window=immediate --ontop --geometry=1232:191 --autofit=35% --no-terminal --really-quiet"
 
+# Setup Text Colors (defined early so they are available for the requirements check)
+black=$(tput setaf 16)
+white=$(tput setaf 15)
+gray=$(tput setaf 236)
+blue=$(tput setaf 21)
+green=$(tput setaf 28)
+red=$(tput setaf 1)
+cyan=$(tput setaf 36)
+purple=$(tput setaf 128)
+brown=$(tput setaf 130)
+yellow=$(tput setaf 226)
+orange=$(tput setaf 202)
+pink=$(tput setaf 207)
+lgray=$(tput setaf 246)
+lblue=$(tput setaf 39)
+lgreen=$(tput setaf 118)
+lred=$(tput setaf 9)
+lcyan=$(tput setaf 14)
+lpurple=$(tput setaf 99)
+blgray=$(tput setab 246) # Background Light Gray
+BoGreen=$(tput bold; tput setaf 28) # Bold Green
+BoRed=$(tput bold; tput setaf 1) # Bold Red
+ReverseGR=$(tput setaf 28; tput rev) 	# Reverse Green
+ReverseRed=$(tput setaf 1; tput rev) 	# Reverse Red
+invis=$(tput civis)			# Invisible Cursor
+norm=$(tput cnorm)			# Normal Cursor
+standout=$(tput smso)
+blink=$(tput blink)
+reverse=$(tput rev)
+bold=$(tput bold) 
+reset=$(tput sgr0)      #  Reset text attributes to normal
+
 
 # set the screen to ensure 2 columns for initial menu dislay
 # delete if undesirable
 if command -v resize >/dev/null 2>&1 ; then
-    resize -s 50 125
+    resize -s 50 125 >/dev/null 2>&1
 	clear
 	tput cup 0 0
 else
     printf '\e[8;50;125t'
     clear
-    tput rc
+    tput cup 0 0
 fi
 
 #
 # This script play's youtube videos from the terminal (via mpv or mkchromecast).
 # No need to open a browser and go to the youtube site.
 # This script uses external tools to obtain urls and play youtube videos.
-# MPV to play, curl to fetch the source page and youtube-dl to get the url for the highest quality Video.
-# MPV has a builtin hook to use youtube-dl (required) to obtain the url and play the highest quality Video.
+# MPV to play, curl to fetch the source page and yt-dlp to get the url for the highest quality Video.
+# MPV has a builtin hook to use yt-dlp (required) to obtain the url and play the highest quality Video.
 # In addition, this script uses the bash builtin mapfile that is only available in bash > 4.x
 # This script offers no dependency checks for the optional tools. Make sure you have the required tools installed.
 # You can use this script as a template for most any youtube page simply by changing the variables listed below.
@@ -34,7 +66,7 @@ fi
 # Requirements:
 #
 # MPV
-# youtube-dl   # youtube-dl install instructions https://youtube-dl.org/
+# yt-dlp      # yt-dlp install instructions https://github.com/yt-dlp/yt-dlp
 # Curl
 # Bash > 4.x (for builtin mapfile)
 #
@@ -105,9 +137,9 @@ printf "%b\n" "${orange}"
 
 number=1
 until [ $number -gt ${#selections[@]} ]; do
-	printf "%b" " ${number}.\t ${selections[$number]}\n"
+	printf "%3d.  %s\n" "${number}" "${selections[$number]}"
 	((number++))
-done  | column -c 125
+done | column -c 125
 
 printf "%b\n" "${green}""  Single Digit Entries Require Enter Key to Be Pressed. (Double Tap ESC to Exit)"
 
@@ -117,9 +149,11 @@ if [[ ${choice} == $'\e'$'\e' ]]; then
 tput cub 100;tput ed
 exit
 elif [ "${choice}" -ge 1 ] && [ "${choice}" -le ${#selections[@]} ]; then
-eval Title=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | grep -Pio '(?<=Title=).*')
-eval Channel=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | grep -Pio '(?<=Channel=).*')
-eval ChannelURL=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | grep -Pio '(?<=ChannelURL=).*')
+Title=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | grep -Pio '(?<=Title=).*' | tr -d '"')
+Channel=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | grep -Pio '(?<=Channel=).*' | tr -d '"')
+# ChannelURL may reference ${Channel} — expand it now that Channel is set
+_raw_url=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | grep -Pio '(?<=ChannelURL=).*' | tr -d '"')
+ChannelURL="${_raw_url//\$\{Channel\}/$Channel}"
 #eval Episodes=$(grep -A4 "${selections[$choice]}" "${config}"/ytVideo.conf | grep -Pio '(?<=Episodes=).*')
 tput cub 100;tput ed
 printf "%b\n" "${yellow}"
@@ -140,39 +174,7 @@ Main
 
 
 # MPV Options. For local display only.
-
-# Setup Text Colors
-
-black=$(tput setaf 16)
-white=$(tput setaf 15)
-gray=$(tput setaf 236)
-blue=$(tput setaf 21)
-green=$(tput setaf 28)
-red=$(tput setaf 1)
-cyan=$(tput setaf 36)
-purple=$(tput setaf 128)
-brown=$(tput setaf 130)
-yellow=$(tput setaf 226)
-orange=$(tput setaf 202)
-pink=$(tput setaf 207)
-lgray=$(tput setaf 246)
-lblue=$(tput setaf 39)
-lgreen=$(tput setaf 118)
-lred=$(tput setaf 9)
-lcyan=$(tput setaf 14)
-lpurple=$(tput setaf 99)
-blgray=$(tput setab 246) # Background Light Gray
-BoGreen=$(tput bold; tput setaf 28) # Bold Green
-BoRed=$(tput bold; tput setaf 1) # Bold Red
-ReverseGR=$(tput setaf 28; tput rev) 	# Reverse Green
-ReverseRed=$(tput setaf 1; tput rev) 	# Reverse Red
-invis=$(tput civis)			# Invisible Cursor
-norm=$(tput cnorm)			# Normal Cursor
-standout=$(tput smso)
-blink=$(tput blink)
-reverse=$(tput rev)
-bold=$(tput bold) 
-reset=$(tput sgr0)      #  Reset text attributes to normal
+# (Text colors are defined near the top of the script, before the requirements check)
 
 
 ##########################################################################################################
@@ -209,7 +211,7 @@ printf "%b\n" ""${ChannelURL}" > "${Logfile}"source.log"
 # Download the YouTube Channel videos page
 yt-dlp --playlist-items 1-"${Episodes}" --flat-playlist --extractor-args "youtubetab:approximate_date" --print "%()j" "${ChannelURL}" > "${Logfile}"source.log
 # Get the source file for video dates.
-# Until youtube-dl supports "upload / file date" with --flat-playlist this is helpful for getting the video dates (currently only max of 30)
+# Until yt-dlp supports "upload / file date" with --flat-playlist this is helpful for getting the video dates (currently only max of 30)
 #curl -s -L "${ChannelURL}" > "${Logfile}"source2.log
 
 printf "%b\n" "Getting Video url's, Dates & Title's for videos......Please wait\n\n"
@@ -229,12 +231,17 @@ jq -r .title "${Logfile}"source.log > "${Logfile}"titles.log
 sed -i 's/&nbsp;/ /g; s/&amp;/\&/g; s/&lt;/\</g; s/&gt;/\>/g; s/&quot;/\"/g; s/#&#39;/\'"'"'/g; s/&#039;/\'"'"'/g; s/&ldquo;/\"/g; s/&rdquo;/\"/g; s/&rsquo;/\’/g; s/&mdash;/\-/g; s/&#160;/\-/g; s/2019;/\’/g; s/&#x2019;/\’/g; s/&#x27;/\’/g;' "${Logfile}"titles.log
 
 
-# Get the Video dates.
-jq -r .upload_date "${Logfile}"source.log > "${Logfile}"dates.log
+# Get the Video dates and convert from YYYYMMDD to D Mon YYYY.
+# release_date is set by approximate_date extractor arg; fall back to upload_date.
+jq -r '(.release_date // .upload_date // "")' "${Logfile}"source.log | \
+  awk 'BEGIN{split("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec",m," ")} \
+       /^[0-9]{8}$/ {y=substr($0,1,4); mo=substr($0,5,2)+0; d=substr($0,7,2)+0; print d" "m[mo]" "y; next} \
+       {print ""}' \
+  > "${Logfile}"dates.log
 
 
 # Get video duration
-# Until youtube-dl supports all "--get-options" with --flat-playlist this is not usable.
+# Until yt-dlp supports all "--get-options" with --flat-playlist this is not usable.
 jq -r .duration_string "${Logfile}"source.log > "${Logfile}"time.log
 
 # Add the word long to the time string
@@ -247,7 +254,7 @@ mapfile -O 1 -t < "${Logfile}"dates.log dates
 mapfile -O 1 -t < "${Logfile}"urls.log mp4url
 mapfile -O 1 -t < "${Logfile}"time.log duration
 
-# Until youtube-dl supports all "--get-options" with --flat-playlist this is not usable.
+# Until yt-dlp supports all "--get-options" with --flat-playlist this is not usable.
 #mapfile -O 1 -t < "${Logfile}"time.log duration
 
 # Remove temp log files now that the arrays are populated
@@ -356,7 +363,7 @@ printf "%b\n\n\n" "Screen Casting  "${mp4}""
 mkchromecast -n SHIELD -p 5000 -y "${mp4}" --video --control
 
 # Stream to castnow (available but optional    Uncomment this option to use instead of mkchromecast)
-#youtube-dl -o - "${mp4}" | castnow --stdin-port 5000 --quiet -
+#yt-dlp -o - "${mp4}" | castnow --stdin-port 5000 --quiet -
 
 tput clear
 Display
