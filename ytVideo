@@ -4,6 +4,8 @@
 config=""$HOME"/YouTube-Terminal"
 Logfile="YouTubeVids-"
 
+castname="Smart TV Pro"
+
 # Geometry is the window position in pixels xy. Autofit is the size of the window. Both can be removed if desired
 mpvOptions="--force-window=immediate --ontop --geometry=1232:191 --autofit=35% --no-terminal --really-quiet"
 
@@ -338,37 +340,55 @@ Display
 
 # Choose where to display output. Either Chromecast or computer monitor.
 Output() {
-
 printf "%b" "${yellow}"
-read -p "1. For local Computer Monitor.    2. For Google Cast device  " -r -n 1 choice2
+read -p "1. For local Computer Monitor.    2. For Google Cast device    3. Download video as MKV  " -r -n 1 choice2
 printf "%b" "${reset}"
 
 # MPV Player local display
 if [[ ${choice2} == $'\e' ]]; then
-tput cub 100;tput ed
-Display
+    tput cub 100;tput ed
+    Display
 elif [[ ${choice2} == 1 ]]; then
-tput dl 1;tput ed
-printf "%b\n" "Playing on Local Display URL  "${mp4}""
-mpv ${mpvOptions} --title="${titles[$choice]}  ${dates[$choice]}" --force-media-title="${titles[$choice]}" "${mp4}"
-wait
-tput clear
-Display
+    tput dl 1;tput ed
+    printf "%b\n" "Playing on Local Display URL  "${mp4}""
+    mpv ${mpvOptions} --title="${titles[$choice]}  ${dates[$choice]}" --force-media-title="${titles[$choice]}" "${mp4}"
+    wait
+    tput clear
+    Display
 # Cast to Google Chromecast
 elif [[ ${choice2} == 2 ]]; then
-tput cuu 2;tput cub 100;tput ed
-printf "%b\n\n\n" "Screen Casting  "${mp4}""
+    tput cuu 2;tput cub 100;tput ed
+    printf "%b\n\n\n" "Screen Casting  "${mp4}""
 
-# Stream to mkchromecast (available but optional comment out to use castnow instead of mkchromecast)
-mkchromecast -n SHIELD -p 5000 -y "${mp4}" --video --control
+    # Stream to mkchromecast (available but optional comment out to use castnow instead of mkchromecast)
+    mkchromecast -n "${castname}" -p 5000 -y "${mp4}" --video --control
 
-# Stream to castnow (available but optional    Uncomment this option to use instead of mkchromecast)
-#yt-dlp -o - "${mp4}" | castnow --stdin-port 5000 --quiet -
+    # Stream to castnow (available but optional    Uncomment this option to use instead of mkchromecast)
+    #yt-dlp -o - "${mp4}" | castnow --stdin-port 5000 --quiet -
 
-tput clear
-Display
+    tput clear
+    Display
+# Download video as MKV with Opus audio, tagged
+elif [[ ${choice2} == 3 ]]; then
+    tput dl 1;tput ed
+    printf "%b\n" "Downloading video as MKV (Opus audio, 1080p if available)..."
+    # Set output filename (sanitize channel and title for filename)
+    safe_channel=$(echo "${Channel}" | tr -cd '[:alnum:] _-' | tr ' ' '_')
+    safe_title=$(echo "${titles[$choice]}" | tr -cd '[:alnum:] _-' | tr ' ' '_')
+    out_name="${safe_channel}-${safe_title}.mkv"
+    # Download with yt-dlp: bestvideo up to 1080p, bestaudio (opus), mkv container, minimal output
+    yt-dlp \
+        --merge-output-format mkv \
+        -f "bestvideo[height<=1080]+bestaudio[acodec=opus]/best[height<=1080]" \
+        --output "$out_name" \
+        --progress --quiet --no-warnings \
+        "${mp4}"
+    printf "%b\n" "Download complete: $out_name"
+    read -n 1 -p "Press any key to return to menu..."
+    tput clear
+    Display
 else
-Output
+    Output
 fi
 }
 Read_Conf
